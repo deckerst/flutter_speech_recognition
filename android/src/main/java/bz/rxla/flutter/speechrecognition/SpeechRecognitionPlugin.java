@@ -61,7 +61,7 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
             // is declared in the manifest and accepted during installation ( AndroidSDK 21- )
             result.success(true);
             Locale locale = activity.getResources().getConfiguration().locale;
-            Log.d(LOG_TAG, "Current Locale : " + locale.toString());
+//            Log.d(LOG_TAG, "Current Locale : " + locale.toString());
             speechChannel.invokeMethod("speech.onCurrentLocale", locale.toString());
         } else if (call.method.equals("speech.listen")) {
             recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocale(call.arguments.toString()));
@@ -94,16 +94,14 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     @Override
     public void onBeginningOfSpeech() {
-        Log.d("SYDOTY", "onRecognitionStarted");
+        Log.d(LOG_TAG, "onRecognitionStarted");
         transcription = "";
 
         speechChannel.invokeMethod("speech.onRecognitionStarted", null);
     }
 
     @Override
-    public void onRmsChanged(float rmsdB) {
-        Log.d(LOG_TAG, "onRmsChanged : " + rmsdB);
-    }
+    public void onRmsChanged(float rmsdB) {}
 
     @Override
     public void onBufferReceived(byte[] buffer) {
@@ -120,17 +118,29 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     public void onError(int error) {
         Log.d(LOG_TAG, "onError : " + error);
         speechChannel.invokeMethod("speech.onSpeechAvailability", false);
-        speechChannel.invokeMethod("speech.onError", error);
+        String errorString;
+        switch(error) {
+            case 1: errorString = "ERROR_NETWORK_TIMEOUT"; break;
+            case 2: errorString = "ERROR_NETWORK"; break;
+            case 3: errorString = "ERROR_AUDIO"; break;
+            case 4: errorString = "ERROR_SERVER"; break;
+            case 5: errorString = "ERROR_CLIENT"; break;
+            case 6: errorString = "ERROR_SPEECH_TIMEOUT"; break;
+            case 7: errorString = "ERROR_NO_MATCH"; break;
+            case 8: errorString = "ERROR_RECOGNIZER_BUSY"; break;
+            case 9: errorString = "ERROR_INSUFFICIENT_PERMISSIONS"; break;
+            default: errorString = "UNKNOWN_CODE_" + error; break;
+        }
+        speechChannel.invokeMethod("speech.onError", errorString);
     }
 
     @Override
     public void onPartialResults(Bundle partialResults) {
-        Log.d(LOG_TAG, "onPartialResults...");
-        ArrayList<String> matches = partialResults
-                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+//        Log.d(LOG_TAG, "onPartialResults...");
+        ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         transcription = matches.get(0);
+//        Log.d(LOG_TAG, "onPartialResults -> " + transcription);
         sendTranscription(false);
-
     }
 
     @Override
@@ -140,17 +150,18 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     @Override
     public void onResults(Bundle results) {
-        Log.d(LOG_TAG, "onResults...");
-        ArrayList<String> matches = results
-                .getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        String text = "";
+//        Log.d(LOG_TAG, "onResults...");
+        ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         transcription = matches.get(0);
-        Log.d(LOG_TAG, "onResults -> " + transcription);
+//        Log.d(LOG_TAG, "onResults -> " + transcription);
         sendTranscription(true);
     }
 
     private void sendTranscription(boolean isFinal) {
-        speechChannel.invokeMethod(isFinal ? "speech.onRecognitionComplete" : "speech.onSpeech", transcription);
+        if (isFinal) {
+            speechChannel.invokeMethod("speech.onRecognitionComplete", transcription);
+        } else if (transcription != null && !transcription.isEmpty()) {
+            speechChannel.invokeMethod("speech.onSpeech", transcription);
+        }
     }
-
 }

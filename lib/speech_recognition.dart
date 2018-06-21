@@ -8,8 +8,7 @@ typedef void StringResultHandler(String text);
 
 /// the channel to control the speech recognition
 class SpeechRecognition {
-  static const MethodChannel _channel =
-      const MethodChannel('speech_recognition');
+  static const MethodChannel _channel = const MethodChannel('speech_recognition');
 
   static final SpeechRecognition _speech = new SpeechRecognition._internal();
 
@@ -21,19 +20,18 @@ class SpeechRecognition {
 
   AvailabilityHandler availabilityHandler;
 
+  StringResultHandler errorHandler;
   StringResultHandler currentLocaleHandler;
   StringResultHandler recognitionResultHandler;
 
   VoidCallback recognitionStartedHandler;
-
   VoidCallback recognitionCompleteHandler;
 
-  /// ask for speech  recognizer permission
+  /// ask for speech recognizer permission
   Future activate() => _channel.invokeMethod("speech.activate");
 
   /// start listening
-  Future listen({String locale}) =>
-      _channel.invokeMethod("speech.listen", locale);
+  Future listen({String locale}) => _channel.invokeMethod("speech.listen", locale);
 
   Future cancel() => _channel.invokeMethod("speech.cancel");
 
@@ -57,27 +55,27 @@ class SpeechRecognition {
       case "speech.onRecognitionComplete":
         recognitionCompleteHandler();
         break;
+      case "speech.onError":
+        errorHandler(call.arguments);
+        break;
       default:
-        print('Unknowm method ${call.method} ');
+        print('Unknown method ${call.method}');
     }
   }
 
   // define a method to handle availability / permission result
-  void setAvailabilityHandler(AvailabilityHandler handler) =>
-      availabilityHandler = handler;
+  void setAvailabilityHandler(AvailabilityHandler handler) => availabilityHandler = handler;
 
   // define a method to handle recognition result
-  void setRecognitionResultHandler(StringResultHandler handler) =>
-      recognitionResultHandler = handler;
+  void setRecognitionResultHandler(StringResultHandler handler) => recognitionResultHandler = handler;
 
   // define a method to handle native call
-  void setRecognitionStartedHandler(VoidCallback handler) =>
-      recognitionStartedHandler = handler;
+  void setRecognitionStartedHandler(VoidCallback handler) => recognitionStartedHandler = handler;
 
   // define a method to handle native call
-  void setRecognitionCompleteHandler(VoidCallback handler) =>
-      recognitionCompleteHandler = handler;
+  void setRecognitionCompleteHandler(VoidCallback handler) => recognitionCompleteHandler = handler;
 
-  void setCurrentLocaleHandler(StringResultHandler handler) =>
-      currentLocaleHandler = handler;
+  void setCurrentLocaleHandler(StringResultHandler handler) => currentLocaleHandler = handler;
+
+  void setErrorHandler(StringResultHandler handler) => errorHandler = handler;
 }
