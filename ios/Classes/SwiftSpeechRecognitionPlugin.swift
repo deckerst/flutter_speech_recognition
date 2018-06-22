@@ -160,14 +160,12 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
     switch (lang) {
     case "fr_FR":
       return speechRecognizerFr
-    case "en_US":
-      return speechRecognizerEn
     case "ru_RU":
       return speechRecognizerRu
     case "it_IT":
       return speechRecognizerIt
     default:
-      return speechRecognizerFr
+      return speechRecognizerEn
     }
   }
 
