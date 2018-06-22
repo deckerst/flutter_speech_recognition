@@ -26,7 +26,6 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     private SpeechRecognizer speech;
     private MethodChannel speechChannel;
     String transcription = "";
-    private boolean cancelled = false;
     private Intent recognizerIntent;
     private Activity activity;
 
@@ -65,16 +64,13 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
             speechChannel.invokeMethod("speech.onCurrentLocale", locale.toString());
         } else if (call.method.equals("speech.listen")) {
             recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocale(call.arguments.toString()));
-            cancelled = false;
             speech.startListening(recognizerIntent);
             result.success(true);
         } else if (call.method.equals("speech.cancel")) {
             speech.stopListening();
-            cancelled = true;
             result.success(true);
         } else if (call.method.equals("speech.stop")) {
             speech.stopListening();
-            cancelled = false;
             result.success(true);
         } else {
             result.notImplemented();
@@ -158,9 +154,11 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     }
 
     private void sendTranscription(boolean isFinal) {
-        if (isFinal) {
-            speechChannel.invokeMethod("speech.onRecognitionComplete", transcription);
-        } else if (transcription != null && !transcription.isEmpty()) {
+        // commented as onRecognitionComplete gets called twice: here & onEndOfSpeech
+//        if (isFinal) {
+//            speechChannel.invokeMethod("speech.onRecognitionComplete", transcription);
+//        }
+        if (transcription != null && !transcription.isEmpty()) {
             speechChannel.invokeMethod("speech.onSpeech", transcription);
         }
     }
