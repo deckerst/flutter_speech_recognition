@@ -96,13 +96,17 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
         return new Locale(localeParts[0], localeParts[1]);
     }
 
-    private void sendTranscription(Bundle results) {
+    private void sendTranscription(Bundle results, boolean isFinal) {
         ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
         if (matches.size() > 0) {
             String match = matches.get(0);
             if (match != null && !match.isEmpty() && !match.equals(transcription)) {
                 transcription = match;
-                speechChannel.invokeMethod("speech.onSpeech", transcription);
+                if (isFinal) {
+                    speechChannel.invokeMethod("speech.onRecognitionComplete", transcription);
+                } else {
+                    speechChannel.invokeMethod("speech.onSpeech", transcription);
+                }
             }
         }
     }
@@ -150,12 +154,12 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     @Override
     public void onPartialResults(Bundle results) {
-        sendTranscription(results);
+        sendTranscription(results, false);
     }
 
     @Override
     public void onResults(Bundle results) {
-        sendTranscription(results);
+        sendTranscription(results, true);
     }
 
     @Override
