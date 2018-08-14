@@ -2,6 +2,8 @@ package bz.rxla.flutter.speechrecognition;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
@@ -13,6 +15,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 import io.flutter.plugin.common.PluginRegistry.Registrar;
 
+import java.lang.SuppressWarnings;
 import java.util.ArrayList;
 import java.util.Locale;
 
@@ -46,24 +49,26 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
         speech.setRecognitionListener(this);
 
         recognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         recognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3);
     }
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
-
         if (call.method.equals("speech.activate")) {
-            // FIXME => Dummy activation verification : we assume that speech recognition permission
-            // is declared in the manifest and accepted during installation ( AndroidSDK 21- )
+            // we assume that speech recognition permission is declared in the manifest and accepted during installation (AndroidSDK 21+)
             result.success(true);
-            Locale locale = activity.getResources().getConfiguration().locale;
-//            Log.d(LOG_TAG, "Current Locale : " + locale.toString());
-            speechChannel.invokeMethod("speech.onCurrentLocale", locale.toString());
+            speechChannel.invokeMethod("speech.onCurrentLocale", getContextLocale().toString());
         } else if (call.method.equals("speech.listen")) {
-            recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocale(call.arguments.toString()));
+            String locale = call.argument("locale");
+            recognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, getLocale(locale));
+
+            int completeDelayMillis = call.argument("completeDelayMillis");
+            recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, completeDelayMillis);
+            recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, completeDelayMillis);
+            recognizerIntent.putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS, completeDelayMillis);
+
             speech.startListening(recognizerIntent);
             result.success(true);
         } else if (call.method.equals("speech.cancel")) {
@@ -77,31 +82,38 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
         }
     }
 
+    @SuppressWarnings("deprecation")
+    private Locale getContextLocale() {
+        Configuration config = activity.getResources().getConfiguration();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            return config.getLocales().get(0);
+        }
+        return config.locale;
+    }
+
     private Locale getLocale(String code) {
         String[] localeParts = code.split("_");
         return new Locale(localeParts[0], localeParts[1]);
     }
 
-    @Override
-    public void onReadyForSpeech(Bundle params) {
-        Log.d(LOG_TAG, "onReadyForSpeech");
-        speechChannel.invokeMethod("speech.onSpeechAvailability", true);
+    private void sendTranscription(Bundle results) {
+        ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+        if (matches.size() > 0) {
+            String match = matches.get(0);
+            if (match != null && !match.isEmpty() && !match.equals(transcription)) {
+                transcription = match;
+                speechChannel.invokeMethod("speech.onSpeech", transcription);
+            }
+        }
     }
+
+    // RecognitionListener
 
     @Override
     public void onBeginningOfSpeech() {
         Log.d(LOG_TAG, "onRecognitionStarted");
         transcription = "";
-
         speechChannel.invokeMethod("speech.onRecognitionStarted", null);
-    }
-
-    @Override
-    public void onRmsChanged(float rmsdB) {}
-
-    @Override
-    public void onBufferReceived(byte[] buffer) {
-        Log.d(LOG_TAG, "onBufferReceived");
     }
 
     @Override
@@ -112,7 +124,7 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     @Override
     public void onError(int error) {
-        Log.d(LOG_TAG, "onError : " + error);
+        Log.d(LOG_TAG, "onError with error=" + error);
         speechChannel.invokeMethod("speech.onSpeechAvailability", false);
         String errorString;
         switch(error) {
@@ -131,35 +143,29 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     }
 
     @Override
-    public void onPartialResults(Bundle partialResults) {
-//        Log.d(LOG_TAG, "onPartialResults...");
-        ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        transcription = matches.get(0);
-//        Log.d(LOG_TAG, "onPartialResults -> " + transcription);
-        sendTranscription(false);
+    public void onReadyForSpeech(Bundle params) {
+        Log.d(LOG_TAG, "onReadyForSpeech");
+        speechChannel.invokeMethod("speech.onSpeechAvailability", true);
     }
 
     @Override
-    public void onEvent(int eventType, Bundle params) {
-        Log.d(LOG_TAG, "onEvent : " + eventType);
+    public void onPartialResults(Bundle results) {
+        sendTranscription(results);
     }
 
     @Override
     public void onResults(Bundle results) {
-//        Log.d(LOG_TAG, "onResults...");
-        ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-        transcription = matches.get(0);
-//        Log.d(LOG_TAG, "onResults -> " + transcription);
-        sendTranscription(true);
+        sendTranscription(results);
     }
 
-    private void sendTranscription(boolean isFinal) {
-        // commented as onRecognitionComplete gets called twice: here & onEndOfSpeech
-//        if (isFinal) {
-//            speechChannel.invokeMethod("speech.onRecognitionComplete", transcription);
-//        }
-        if (transcription != null && !transcription.isEmpty()) {
-            speechChannel.invokeMethod("speech.onSpeech", transcription);
-        }
+    @Override
+    public void onBufferReceived(byte[] buffer) {}
+
+    @Override
+    public void onRmsChanged(float rmsdB) {}
+
+    @Override
+    public void onEvent(int eventType, Bundle params) {
+        Log.d(LOG_TAG, "onEvent with eventType=" + eventType);
     }
 }

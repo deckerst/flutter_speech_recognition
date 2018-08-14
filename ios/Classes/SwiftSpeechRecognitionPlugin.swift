@@ -33,12 +33,20 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
     switch (call.method) {
     case "speech.activate":
       self.activateRecognition(result: result)
+
     case "speech.listen":
-      self.startRecognition(lang: call.arguments as! String, result: result)
+      guard let args = call.arguments as? [String: Any] else {
+        fatalError("args are formatted badly")
+      }
+      let lang = args["locale"] as! String
+      self.startRecognition(lang: lang, result: result)
+
     case "speech.cancel":
       self.cancelRecognition(result: result)
+
     case "speech.stop":
       self.stopRecognition(result: result)
+
     default:
       result(FlutterMethodNotImplemented)
     }

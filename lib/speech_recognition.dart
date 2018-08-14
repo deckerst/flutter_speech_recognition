@@ -31,14 +31,19 @@ class SpeechRecognition {
   Future activate() => _channel.invokeMethod("speech.activate");
 
   /// start listening
-  Future listen({String locale}) => _channel.invokeMethod("speech.listen", locale);
+  Future listen({String locale, int completeDelayMillis}) => _channel.invokeMethod("speech.listen", {
+        'locale': locale,
+        'completeDelayMillis': completeDelayMillis
+      });
 
   Future cancel() => _channel.invokeMethod("speech.cancel");
 
   Future stop() => _channel.invokeMethod("speech.stop");
 
   Future _platformCallHandler(MethodCall call) async {
-    print("_platformCallHandler call ${call.method} ${call.arguments}");
+    print("_platformCallHandler call ${call
+            .method} ${call
+            .arguments}");
     switch (call.method) {
       case "speech.onSpeechAvailability":
         availabilityHandler(call.arguments);
@@ -59,7 +64,8 @@ class SpeechRecognition {
         errorHandler(call.arguments);
         break;
       default:
-        print('Unknown method ${call.method}');
+        print('Unknown method ${call
+                .method}');
     }
   }
 
