@@ -28,7 +28,7 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     private SpeechRecognizer speech;
     private MethodChannel speechChannel;
-    String transcription = "";
+    private String transcription = "";
     private Intent recognizerIntent;
     private Activity activity;
 
@@ -41,6 +41,10 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     }
 
     private SpeechRecognitionPlugin(Activity activity, MethodChannel channel) {
+        if (activity == null) {
+            return;
+        }
+
         this.speechChannel = channel;
         this.speechChannel.setMethodCallHandler(this);
         this.activity = activity;
