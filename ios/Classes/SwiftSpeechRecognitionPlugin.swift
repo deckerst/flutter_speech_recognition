@@ -10,10 +10,11 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
     registrar.addMethodCallDelegate(instance, channel: channel)
   }
 
-  private let speechRecognizerFr = SFSpeechRecognizer(locale: Locale(identifier: "fr_FR"))!
-  private let speechRecognizerEn = SFSpeechRecognizer(locale: Locale(identifier: "en_US"))!
-  private let speechRecognizerRu = SFSpeechRecognizer(locale: Locale(identifier: "ru_RU"))!
-  private let speechRecognizerIt = SFSpeechRecognizer(locale: Locale(identifier: "it_IT"))!
+  private let speechRecognizerEn = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))!
+  private let speechRecognizerFr = SFSpeechRecognizer(locale: Locale(identifier: "fr-FR"))!
+  private let speechRecognizerIt = SFSpeechRecognizer(locale: Locale(identifier: "it-IT"))!
+  private let speechRecognizerKo = SFSpeechRecognizer(locale: Locale(identifier: "ko-KR"))!
+  private let speechRecognizerRu = SFSpeechRecognizer(locale: Locale(identifier: "ru-RU"))!
 
   private var speechChannel: FlutterMethodChannel?
 
@@ -53,10 +54,11 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
   }
 
   private func activateRecognition(result: @escaping FlutterResult) {
-    speechRecognizerFr.delegate = self
     speechRecognizerEn.delegate = self
-    speechRecognizerRu.delegate = self
+    speechRecognizerFr.delegate = self
     speechRecognizerIt.delegate = self
+    speechRecognizerKo.delegate = self
+    speechRecognizerRu.delegate = self
 
     SFSpeechRecognizer.requestAuthorization { authStatus in
       OperationQueue.main.addOperation {
@@ -166,12 +168,14 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
 
   private func getRecognizer(lang: String) -> Speech.SFSpeechRecognizer {
     switch (lang) {
-    case "fr_FR":
+    case "fr-FR":
       return speechRecognizerFr
-    case "ru_RU":
-      return speechRecognizerRu
-    case "it_IT":
+    case "it-IT":
       return speechRecognizerIt
+    case "ko-KR":
+      return speechRecognizerKo
+    case "ru-RU":
+      return speechRecognizerRu
     default:
       return speechRecognizerEn
     }
