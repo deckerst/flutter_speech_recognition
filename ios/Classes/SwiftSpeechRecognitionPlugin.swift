@@ -104,6 +104,7 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
   }
 
   private func stopRecognition(result: FlutterResult) {
+    print("stopRecognition...")
     if audioEngine.isRunning {
       audioEngine.stop()
       recognitionRequest?.endAudio()
@@ -116,8 +117,10 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
     cancelRecognition(result: nil)
 
     let audioSession = AVAudioSession.sharedInstance()
-    try audioSession.setCategory(AVAudioSessionCategoryRecord)
-    try audioSession.setMode(AVAudioSessionModeMeasurement)
+    try audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: .defaultToSpeaker)
+    // AVAudioSessionModeVoiceChat: recognition fails with [avae] AVAEInternal.h:70:_AVAE_Check: required condition is false: [AVAudioIONodeImpl.mm:911:SetOutputFormat: (format.sampleRate == hwFormat.sampleRate)]
+    // AVAudioSessionModeSpokenAudio: recognition works, but not right after TTS
+    try audioSession.setMode(AVAudioSessionModeSpokenAudio)
     try audioSession.setActive(true, with: .notifyOthersOnDeactivation)
 
     recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
@@ -126,6 +129,14 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
     guard let recognitionRequest = recognitionRequest else {
       fatalError("Unable to created a SFSpeechAudioBufferRecognitionRequest object")
     }
+    
+    let avSampleRate = AVAudioSession.sharedInstance().sampleRate
+    print("sampleRate from AVAudioSession: \(avSampleRate)")
+    let inputNodeSampleRate = inputNode.inputFormat(forBus: 0).sampleRate
+    print("sampleRate from inputNode: \(inputNodeSampleRate)")
+    let outputNode = audioEngine.outputNode
+    let outputNodeSampleRate = outputNode.outputFormat(forBus: 0).sampleRate
+    print("sampleRate from outputNode: \(outputNodeSampleRate)")
 
     recognitionRequest.shouldReportPartialResults = true
 

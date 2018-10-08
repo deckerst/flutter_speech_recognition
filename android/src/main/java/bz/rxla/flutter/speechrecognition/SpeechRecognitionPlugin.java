@@ -96,8 +96,10 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
     }
 
     private Locale getLocale(String code) {
-        String[] localeParts = code.split("_");
-        return localeParts.length > 1 ? new Locale(localeParts[0], localeParts[1]) : new Locale(localeParts[0]);
+        String[] localeParts = code.split("[_-]");
+        Locale locale = localeParts.length > 1 ? new Locale(localeParts[0], localeParts[1]) : new Locale(localeParts[0]);
+        Log.d(LOG_TAG, "getLocale with code=" + code + " returned locale=" + locale);
+        return locale;
     }
 
     private void sendTranscription(Bundle results, boolean isFinal) {
