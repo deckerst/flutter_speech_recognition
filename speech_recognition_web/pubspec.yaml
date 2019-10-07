@@ -1,0 +1,29 @@
+name: speech_recognition_web
+description: Web platform implementation of speech_recognition
+author: Thibault Deckers <thibault.deckers@gmail.com>
+homepage: https://github.com/deckerst/flutter_speech_recognition/speech_recognition_web
+version: 0.0.1
+
+flutter:
+  plugin:
+    platforms:
+      web:
+        pluginClass: SpeechRecognitionPlugin
+        fileName: speech_recognition_web.dart
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  meta: ^1.1.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  speech_recognition:
+    path: ../speech_recognition
+
+environment:
+  sdk: ">=2.0.0-dev.28.0 <3.0.0"
+  flutter: ">=1.5.0 <2.0.0"

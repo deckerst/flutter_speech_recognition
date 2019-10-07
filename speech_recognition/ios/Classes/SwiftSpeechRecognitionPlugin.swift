@@ -30,8 +30,10 @@ public class SwiftSpeechRecognitionPlugin: NSObject, FlutterPlugin, SFSpeechReco
   }
 
   public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    //result("iOS " + UIDevice.current.systemVersion)
     switch (call.method) {
+    case "speech.isSupported":
+      result(true)
+
     case "speech.activate":
       self.activateRecognition(result: result)
 

@@ -1,6 +1,6 @@
 import 'dart:async';
-
 import 'dart:ui';
+
 import 'package:flutter/services.dart';
 
 typedef void AvailabilityHandler(bool result);
@@ -27,6 +27,8 @@ class SpeechRecognition {
   VoidCallback recognitionStartedHandler;
   VoidCallback recognitionCompleteHandler;
 
+  Future<bool> isSupported() => _channel.invokeMethod("speech.isSupported");
+
   /// ask for speech recognizer permission
   Future activate() => _channel.invokeMethod("speech.activate");
 
@@ -41,9 +43,6 @@ class SpeechRecognition {
   Future stop() => _channel.invokeMethod("speech.stop");
 
   Future _platformCallHandler(MethodCall call) async {
-    print("_platformCallHandler call ${call
-            .method} ${call
-            .arguments}");
     switch (call.method) {
       case "speech.onSpeechAvailability":
         availabilityHandler(call.arguments);
@@ -64,24 +63,23 @@ class SpeechRecognition {
         errorHandler(call.arguments);
         break;
       default:
-        print('Unknown method ${call
-                .method}');
+        print('Unknown method ${call.method}');
     }
   }
 
   // define a method to handle availability / permission result
-  void setAvailabilityHandler(AvailabilityHandler handler) => availabilityHandler = handler;
+  setAvailabilityHandler(AvailabilityHandler handler) => availabilityHandler = handler;
 
   // define a method to handle recognition result
-  void setRecognitionResultHandler(StringResultHandler handler) => recognitionResultHandler = handler;
+  setRecognitionResultHandler(StringResultHandler handler) => recognitionResultHandler = handler;
 
   // define a method to handle native call
-  void setRecognitionStartedHandler(VoidCallback handler) => recognitionStartedHandler = handler;
+  setRecognitionStartedHandler(VoidCallback handler) => recognitionStartedHandler = handler;
 
   // define a method to handle native call
-  void setRecognitionCompleteHandler(VoidCallback handler) => recognitionCompleteHandler = handler;
+  setRecognitionCompleteHandler(VoidCallback handler) => recognitionCompleteHandler = handler;
 
-  void setCurrentLocaleHandler(StringResultHandler handler) => currentLocaleHandler = handler;
+  setCurrentLocaleHandler(StringResultHandler handler) => currentLocaleHandler = handler;
 
-  void setErrorHandler(StringResultHandler handler) => errorHandler = handler;
+  setErrorHandler(StringResultHandler handler) => errorHandler = handler;
 }

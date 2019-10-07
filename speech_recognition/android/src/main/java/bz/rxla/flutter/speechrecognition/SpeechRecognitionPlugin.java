@@ -60,8 +60,10 @@ public class SpeechRecognitionPlugin implements MethodCallHandler, RecognitionLi
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
-        if (call.method.equals("speech.activate")) {
-            // we assume that speech recognition permission is declared in the manifest and accepted during installation (AndroidSDK 21+)
+        // we assume that speech recognition permission is declared in the manifest and accepted during installation (AndroidSDK 21+)
+        if (call.method.equals("speech.isSupported")) {
+            result.success(true);
+        } else if (call.method.equals("speech.activate")) {
             result.success(true);
             speechChannel.invokeMethod("speech.onCurrentLocale", getContextLocale().toString());
         } else if (call.method.equals("speech.listen")) {
