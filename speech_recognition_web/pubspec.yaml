@@ -16,13 +16,6 @@ dependencies:
     sdk: flutter
   flutter_web_plugins:
     sdk: flutter
-  meta: ^1.1.7
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  speech_recognition:
-    path: ../speech_recognition
 
 environment:
   sdk: ">=2.0.0-dev.28.0 <3.0.0"
